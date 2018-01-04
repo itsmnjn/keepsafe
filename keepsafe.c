@@ -176,12 +176,16 @@ void aes_decrypt(
 
 void encrypt_mode(char *path)
 {
+        printf("Encrypt mode: %s\n", path);
 
+        exit(EXIT_SUCCESS);
 }
 
 void decrypt_mode(char *path)
 {
+        printf("Decrypt mode: %s\n", path);
 
+        exit(EXIT_SUCCESS);
 }
 
 void done(symmetric_CTR *ctr)

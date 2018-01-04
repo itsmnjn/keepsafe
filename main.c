@@ -1,28 +1,35 @@
 #include "keepsafe.h"
 
+void usage(char* filename)
+{
+        fprintf(stderr, "Usage: %s <option> <filename>\n", filename);
+        fprintf(stderr, "Options:\n");
+        fprintf(stderr, "\t[default]\tencrypt <filename>\n");
+        fprintf(stderr, "\t-d\t\tdecrypt <filename>\n");
+
+        exit(EXIT_FAILURE);
+}
+
 int main(int argc, char** argv)
 {
-        if (argv[1] == NULL) {
-                printf("Usage: %s <option> <filename>\n", argv[0]);
-                printf("Options:\n");
-                printf("\t[default]\tencrypt <filename>\n");
-                printf("\t-d\t\tdecrypt <filename>\n");
+        int opt;
 
-                return EXIT_FAILURE;
+        if (argv[1] == NULL) {
+                usage(argv[0]);
         }
 
-        switch (argv[1]) {
-        case "-d":
-                if (fopen(argv[1], "r")) {
-                        encrypt_mode(argv[1]);
+        while ((opt = getopt(argc, argv, "d:")) != -1) {
+                switch (opt) {
+                case 'd':
+                        decrypt_mode(optarg);
+                        break;
+                default:
+                        usage(argv[0]);
+                        break;
                 }
         }
 
-        unsigned char *path = (unsigned char *) argv[1];
-
-        printf("File \"%s\" selected...\n", path);
-        unsigned char *passphrase = (unsigned char *) getpass(
-                "Enter a passphrase to encrypt: ");
+        encrypt_mode(argv[1]);
 
         return EXIT_SUCCESS;
 }
