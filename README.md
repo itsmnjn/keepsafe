@@ -1,4 +1,4 @@
-# :key: keepsafe - a dead simple file encryption tool
+# Keepsafe
 
 ## TODO
 
