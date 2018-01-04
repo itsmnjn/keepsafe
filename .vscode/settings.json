@@ -1,7 +1,0 @@
-{
-    "C_Cpp.errorSquiggles": "Disabled",
-    "files.associations": {
-        "tomcrypt.h": "c",
-        "pwd.h": "c"
-    }
-}
