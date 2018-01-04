@@ -1,9 +1,9 @@
 LDFLAGS =
 CFLAGS = -c -Wall -std=c99 -I headers
-SOURCES = main.c
-LIB = libtomcrypt.a
+SOURCES = main.c keepsafe.c
+LIB = lib/libtomcrypt.a
 OBJ = $(SOURCES:.c=.o)
-BIN = safenote
+BIN = keepsafe
 
 all: $(SOURCES) $(BIN)
 
