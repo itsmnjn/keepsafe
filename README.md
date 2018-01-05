@@ -2,6 +2,10 @@
 
 Easily encrypt/decrypt your files with a passphrase. Uses AES-256 for encryption, hashing the passphrase with SHA-256 to use as the key. Cryptography algorithms are provided by [LibTomCrypt](https://github.com/libtom/libtomcrypt).
 
+## System Requirements
+
+Keepsafe is currently supported only on Unix or Unix-like systems.
+
 ## Dependencies
 
 None. The LibTomCrypt library is included with the source, and is statically compiled.
@@ -13,8 +17,8 @@ Clone this repository, `cd` into it, and run `make`. Simple as that.
 ## Usage
 
 ```
-./keepsafe <file to encrypt>
-./keepsafe -d <file to decrypt>
+$ ./keepsafe <file to encrypt>
+$ ./keepsafe -d <file to decrypt>
 ```
 
 Encrypted files will be placed in the current working directory with the extension `.enc` appended.
