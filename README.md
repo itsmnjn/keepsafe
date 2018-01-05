@@ -26,3 +26,9 @@ Encrypted files will be placed in the current working directory with the extensi
 Decrypted files will have `.dec` appended, instead.
 
 **Note:** Keepsafe will not warn upon an incorrect passphrase being entered to decrypt a file. The "decrypted" file will just turn out to be unreadable junk. Couldn't figure out a way to verify the correct key 🤷‍
+
+## Todo
+
+- [ ] Use an actual KDF instead of SHA-256 for generating the key
+- [ ] Append a HMAC blob to the encrypted data for key validation and message authentication
+- [ ] Error check all the functions!
