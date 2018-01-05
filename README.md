@@ -1,6 +1,10 @@
 # Keepsafe
 
-Easily encrypt/decrypt your files with a passphrase. Uses AES-256 for encryption, hashing the passphrase with SHA-256 to use as the key. Cryptography algorithms are provided by LibTomCrypt, which is part of this repository as a submodule in the `lib` directory.
+Easily encrypt/decrypt your files with a passphrase. Uses AES-256 for encryption, hashing the passphrase with SHA-256 to use as the key. Cryptography algorithms are provided by [LibTomCrypt](https://github.com/libtom/libtomcrypt).
+
+## Dependencies
+
+None. The LibTomCrypt library is included with the source, and is statically compiled.
 
 ## Installation
 
