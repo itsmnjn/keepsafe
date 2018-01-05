@@ -13,7 +13,7 @@ Clone this repository, `cd` into it, and run `make`. Simple as that.
 ./keepsafe -d <file to decrypt>
 ```
 
-Encrypted files will be placed in the current working directory with the extension `.enc` appended to the original filename.
+Encrypted files will be placed in the current working directory with the extension `.enc` appended.
 
 Decrypted files will have `.dec` appended, instead.
 
