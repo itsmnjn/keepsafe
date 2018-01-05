@@ -16,21 +16,23 @@ unsigned char * gen_IV();
 
 void set_IV(const unsigned char* IV, symmetric_CTR *ctr);
 
-unsigned char * extract_IV(const char *path);
+unsigned char * extract_IV(FILE *file);
 
-void file_to_buffer(const char *path, unsigned char *buffer, size_t size);
+void file_to_buffer(FILE *file, unsigned char *buffer, size_t size);
 
-void buffer_to_file(
+void enc_buffer_to_file(
         const char *path,
         unsigned char *buffer,
         size_t size,
         const unsigned char *IV);
 
+size_t get_fsize(FILE *file);
+
 char * generate_enc_path(const char *path);
 
 char * generate_dec_path(const char *path);
 
-void print_data(unsigned char *buffer, size_t size);
+void print_data(unsigned char *buffer, size_t size, char mode);
 
 void init(
         const unsigned char *IV,

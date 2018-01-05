@@ -44,47 +44,81 @@ void set_IV(const unsigned char* IV, symmetric_CTR *ctr)
         }
 }
 
-unsigned char * extract_IV(const char *path)
+unsigned char * extract_IV(FILE *file)
 {
         unsigned char *IV = malloc(32 * sizeof(char));
-        FILE *file = fopen(path, "r");
         fread(IV, 1, 32, file);
-        fclose(file);
-
+        fseek(file, 0L, SEEK_SET);
         return IV;
 }
 
-void file_to_buffer(const char *path, unsigned char* buffer, size_t size)
-{
-        FILE *file = fopen(path, "rb");
-        
+void file_to_buffer(FILE *file, unsigned char* buffer, size_t size)
+{       
         if(!(fread(buffer, 1, size, file))) {
                 printf("Error reading file into buffer\n");
                 return exit(EXIT_FAILURE);
         }
 
-        fclose(file);
+        fseek(file, 0L, SEEK_SET);
 }
 
-void buffer_to_file(
+void enc_buffer_to_file(
         const char *path,
         unsigned char *buffer,
         size_t size,
         const unsigned char* IV)
 {
-        FILE *file = fopen(path, "ab+");
+        FILE *file;
         unsigned char *enc_data = malloc((size + 32) * sizeof(char));
 
         memcpy(enc_data, IV, 32);
         memcpy(enc_data + 32, buffer, size);
 
+        if ((file = fopen(path, "ab")) == NULL) {
+                fprintf(stderr, "Error: unable to create file \"%s\".\n", path);
+                exit(EXIT_FAILURE);
+        }
+
         if ((fwrite(enc_data, 1, size + 32, file)) != size + 32) {
-                printf("Error writing encrypted data into file\n");
+                fprintf(stderr, "Error: unable to write encrypted data into file \"%s\".\n", path);
                 exit(EXIT_FAILURE);
         }
 
         fclose(file);
         free(enc_data);
+}
+
+void dec_buffer_to_file(
+        const char *path,
+        unsigned char *buffer,
+        size_t size)
+{
+        FILE *file;
+
+        if ((file = fopen(path, "ab")) == NULL) {
+                fprintf(stderr, "Error: unable to create file \"%s\".\n", path);
+                exit(EXIT_FAILURE);
+        }
+
+        if ((fwrite(buffer, 1, size, file)) != size) {
+                fprintf(stderr, "Error: unable to write encrypted data into file \"%s\".\n", path);
+                exit(EXIT_FAILURE);
+        }
+
+        fclose(file);
+}
+
+size_t get_fsize(FILE *file)
+{
+        long start;
+        size_t size;
+
+        start = ftell(file);
+        fseek(file, 0L, SEEK_END);
+        size = (size_t) ftell(file);
+        fseek(file, start, SEEK_SET);
+
+        return size;
 }
 
 char * generate_enc_path(const char *path)
@@ -99,7 +133,7 @@ char * generate_enc_path(const char *path)
 
 char * generate_dec_path(const char *path)
 {
-        char *dec_path = malloc(strlen(path) + 5);
+        char *dec_path = malloc(strlen(path) + 1);
         
         strcpy(dec_path, path);
         strcat(dec_path, ".dec");
@@ -107,12 +141,25 @@ char * generate_dec_path(const char *path)
         return dec_path;
 }
 
-void print_data(unsigned char *buffer, size_t size)
+void print_data(unsigned char *buffer, size_t size, char mode)
 {
-        for (int i = 0; i < size; i++) {
-                printf("%x", buffer[i]);
+        switch(mode) {
+        case 'x':
+                for (int i = 0; i < size; i++) {
+                        printf("%x", buffer[i]);
+                }
+                printf("\n");
+                break;
+        case 'c':
+                for (int i = 0; i < size; i++) {
+                        printf("%c", buffer[i]);
+                }
+                printf("\n");
+                break;
+        default:
+                fprintf(stderr, "Error (in print_data): unrecognized mode.\n");
+                break;
         }
-        printf("\n");
 }
 
 void init(
@@ -166,7 +213,7 @@ void aes_decrypt(
         if ((err = ctr_decrypt(
                 ciphertext,
                 plaintext,
-                sizeof(ciphertext),
+                len,
                 ctr)
             ) != CRYPT_OK) {
                 printf("ctr_decrypt error: %s\n", error_to_string(err));
@@ -176,14 +223,94 @@ void aes_decrypt(
 
 void encrypt_mode(char *path)
 {
-        printf("Encrypt mode: %s\n", path);
+        FILE *file;
+        size_t fsize;
+        char *enc_path;
+        unsigned char *passphrase, *key, *IV, *plaintext, *ciphertext;
+        symmetric_CTR *ctr = malloc(sizeof(symmetric_CTR));
+
+        if ((file = fopen(path, "rb")) == NULL) {
+                fprintf(stderr, "Error: file \"%s\" does not exist.\n", path);
+                exit(EXIT_FAILURE);
+        }
+
+        printf("Encrypting file \"%s\"...\n", path);
+
+        passphrase = (unsigned char *) getpass("Enter a passphrase: ");
+
+        key = hash(passphrase);
+        IV = gen_IV();
+        fsize = get_fsize(file);
+        plaintext = malloc(fsize * sizeof(char));
+        ciphertext = malloc((fsize + 32) * sizeof(char));
+        enc_path = generate_enc_path(path);
+
+        file_to_buffer(file, plaintext, fsize);
+
+        register_aes();
+        init(IV, key, ctr);
+
+        aes_encrypt(plaintext, ciphertext, fsize, ctr);
+
+        enc_buffer_to_file(enc_path, ciphertext, fsize, IV);
+
+        printf("File \"%s\" successfully encrypted into \"%s\"\n", path, enc_path);
+
+        fclose(file);
+        free(enc_path);
+        free(key);
+        free(IV);
+        free(plaintext);
+        free(ciphertext);
+        free(ctr);
 
         exit(EXIT_SUCCESS);
 }
 
 void decrypt_mode(char *path)
 {
-        printf("Decrypt mode: %s\n", path);
+        FILE *file;
+        size_t fsize;
+        char *dec_path;
+        unsigned char *passphrase, *key, *IV, *plaintext, *ciphertext;
+        symmetric_CTR *ctr = malloc(sizeof(symmetric_CTR));
+
+        if ((file = fopen(path, "rb")) == NULL) {
+                fprintf(stderr, "Error: file \"%s\" does not exist.\n", path);
+                exit(EXIT_FAILURE);
+        }
+
+        printf("Decrypting file \"%s\"...\n", path);
+
+        passphrase = (unsigned char *) getpass("Enter the passphrase: ");
+
+        key = hash(passphrase);
+        IV = extract_IV(file);
+        fsize = get_fsize(file);
+        plaintext = malloc((fsize - 32) * sizeof(char));
+        ciphertext = malloc(fsize * sizeof(char));
+        dec_path = generate_dec_path(path);
+
+        file_to_buffer(file, ciphertext, fsize);
+
+        register_aes();
+        init(IV, key, ctr);
+
+        aes_decrypt(ciphertext + 32, plaintext, fsize - 32, ctr); // +/- 32 is to account for prepended IV in encrypted file
+
+
+
+        dec_buffer_to_file(dec_path, plaintext, fsize - 32);
+
+        printf("File \"%s\" successfully decrypted into \"%s\"\n", path, dec_path);
+
+        fclose(file);
+        free(dec_path);
+        free(key);
+        free(IV);
+        free(plaintext);
+        free(ciphertext);
+        free(ctr);
 
         exit(EXIT_SUCCESS);
 }
